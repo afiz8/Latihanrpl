@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Absensi UNPAM</title>
+
+<style>
+body{
+    font-family: Arial;
+    text-align:center;
+    background:#f4f4f4;
+}
+.container{
+    background:white;
+    padding:20px;
+    margin:30px auto;
+    width:350px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+.hidden{
+    display:none;
+}
+table{
+    margin:auto;
+    background:white;
+    color:black;
+    border-collapse: collapse;
+    width:90%;
+}
+td,th{
+    border:1px solid black;
+    padding:8px;
+}
+.unpam-logo{
+    font-size:48px;
+}
+input{
+    margin:5px;
+    padding:8px;
+    width:80%;
+}
+button{
+    padding:8px 15px;
+    margin:5px;
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN & REGISTER -->
+<div class="container" id="auth">
+    <div class="unpam-logo">🏛️</div>
+    <h2>UNIVERSITAS PAMULANG</h2>
+
+    <h3>Login</h3>
+    <input id="username" placeholder="Username"><br>
+    <input id="password" type="password" placeholder="Password"><br>
+    <button onclick="login()">Login</button>
+    <p id="msg"></p>
+
+    <hr>
+
+    <h3>Register</h3>
+    <input id="reg_user" placeholder="Username"><br>
+    <input id="reg_pass" type="password" placeholder="Password"><br>
+    <button onclick="register()">Register</button>
+</div>
+
+<!-- APP -->
+<div class="container hidden" id="app">
+    <div class="unpam-logo">🏛️</div>
+    <h2 id="welcome"></h2>
+    <h3 id="jam"></h3>
+
+    <input id="nama" placeholder="Nama">
+    <button onclick="tambah()">Tambah Absen</button>
+    <button onclick="logout()">Logout</button>
+
+    <br><br>
+
+    <input id="search" placeholder="Cari nama..." onkeyup="loadData()">
+
+    <br><br>
+
+    <table id="tabel"></table>
+</div>
+
+<script>
+
+// ===== ELEMENT =====
+const user = document.getElementById("username");
+const pass = document.getElementById("password");
+const msg = document.getElementById("msg");
+const auth = document.getElementById("auth");
+const app = document.getElementById("app");
+const welcome = document.getElementById("welcome");
+const nama = document.getElementById("nama");
+const tabel = document.getElementById("tabel");
+
+// ===== STORAGE =====
+function getUsers(){
+    return JSON.parse(localStorage.getItem("users") || "[]");
+}
+function setUsers(data){
+    localStorage.setItem("users", JSON.stringify(data));
+}
+
+function getAbsen(){
+    return JSON.parse(localStorage.getItem("absen") || "[]");
+}
+function setAbsen(data){
+    localStorage.setItem("absen", JSON.stringify(data));
+}
+
+// ===== SESSION =====
+function setSession(u){ localStorage.setItem("session",u); }
+function getSession(){ return localStorage.getItem("session"); }
+
+function logout(){
+    localStorage.removeItem("session");
+    location.reload();
+}
+
+// ===== JAM REALTIME =====
+setInterval(()=>{
+    let jamElem = document.getElementById("jam");
+    if(jamElem){
+        jamElem.innerText = "Jam: " + new Date().toLocaleTimeString();
+    }
+},1000);
+
+// ===== REGISTER =====
+function register(){
+    let u = document.getElementById("reg_user").value.trim();
+    let p = document.getElementById("reg_pass").value.trim();
+
+    if(!u || !p) return alert("Isi semua!");
+
+    let users = getUsers();
+
+    if(users.find(x => x.username === u)){
+        return alert("User sudah ada!");
+    }
+
+    users.push({username:u, password:p});
+    setUsers(users);
+
+    alert("Register berhasil!");
+}
+
+// ===== LOGIN =====
+function login(){
+    let u = user.value.trim();
+    let p = pass.value.trim();
+
+    let users = getUsers();
+
+    let found = users.find(x => x.username === u && x.password === p);
+
+    if(found){
+        setSession(u);
+        showApp();
+    }else{
+        msg.innerText = "Login gagal!";
+    }
+}
+
+// ===== TAMPIL APP =====
+function showApp(){
+    auth.classList.add("hidden");
+    app.classList.remove("hidden");
+
+    let session = getSession();
+    welcome.innerText = "Welcome " + session;
+
+    loadData();
+}
+
+// ===== TAMBAH ABSEN =====
+function tambah(){
+    let n = nama.value.trim();
+    if(!n) return alert("Isi nama!");
+
+    let data = getAbsen();
+
+    data.push({
+        nama:n,
+        waktu:new Date().toLocaleString()
+    });
+
+    setAbsen(data);
+    nama.value = "";
+    loadData();
+}
+
+// ===== LOAD DATA =====
+function loadData(){
+    let data = getAbsen();
+    let search = document.getElementById("search").value.toLowerCase();
+
+    let html = "<tr><th>No</th><th>Nama</th><th>Waktu</th></tr>";
+
+    data
+    .filter(x => x.nama.toLowerCase().includes(search))
+    .forEach((x,i)=>{
+        html += `
+        <tr>
+            <td>${i+1}</td>
+            <td>${x.nama}</td>
+            <td>${x.waktu}</td>
+        </tr>
+        `;
+    });
+
+    tabel.innerHTML = html;
+}
+
+// ===== AUTO LOGIN =====
+if(getSession()){
+    showApp();
+}
+
+</script>
+
+</body>
+</html>
